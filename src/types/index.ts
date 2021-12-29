@@ -1,4 +1,5 @@
 export interface RunSegmentTime {
+	[index: string]: number;
 	segmentId: number;
 	time: number;
 }

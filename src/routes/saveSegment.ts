@@ -26,5 +26,5 @@ export const post: RequestHandler<Record<string, never>, Input, Record<string, n
 		await db.collection(collectionName).insertOne({ id, name });
 	}
 
-	return {};
+	return { body: {} };
 };

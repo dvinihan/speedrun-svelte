@@ -4,19 +4,28 @@
 	import { onMount } from 'svelte';
 	import SegmentItem from '../components/SegmentItem.svelte';
 	import EditSegmentItem from '../components/EditSegmentItem.svelte';
+	import Stopwatch from '../components/Stopwatch.svelte';
+	import { sumBy } from 'lodash';
 
-	let runsData: RunsApiResponse;
+	let runsData: RunsApiResponse | undefined;
 	let segments: SegmentRow[] = [];
 
-	let isRunning: boolean = false;
-	let activeSegmentStartedAtTime: number;
-	let activeSegmentTime: number;
-	let runId: number;
-	let runType: RunType = RunType.ANY_PERCENT;
+	let runningTime = 0;
+	let activeSegmentTime = 0;
+	let activeSegmentStartedAtTime = 0;
+	let isRunning = false;
+	let runType = RunType.ANY_PERCENT;
 
 	let editSegments = false;
 	let newSegment: SegmentRow | undefined;
+
+	let runId: number;
 	let currentSegmentId: number;
+
+	$: isFinished = runsData?.latestRunSegments.every((r) => r.isCompleted);
+	$: isOnLastSegment = currentSegmentId === segments[-1]?.id;
+	$: latestRunSegments = runsData?.latestRunSegments;
+	$: bestSegmentTimes = runsData?.bestSegmentTimes;
 
 	const fetchSegments = async () => {
 		const res = await fetch(`/segments?runType=${runType}`);
@@ -28,11 +37,43 @@
 	const fetchRuns = async () => {
 		const res = await fetch(`runs?runType=${runType}`);
 		runsData = await res.json();
+
+		if (runsData.latestRunSegments.length === 0) {
+			currentSegmentId = 1;
+		} else {
+			const maxSegmentId = Math.max(...runsData.latestRunSegments.map((r) => r.segmentId));
+			currentSegmentId = runsData.latestRunSegments.every((r) => r.isCompleted)
+				? maxSegmentId + 1
+				: maxSegmentId;
+		}
+
+		const currentSegment = runsData.latestRunSegments.find(
+			(runSegment) => runSegment.segmentId === currentSegmentId
+		);
+
+		runningTime = sumBy(runsData.latestRunSegments, (r) => r.segmentTime);
+		runId = runsData?.latestRunSegments?.[0]?.runId;
+		activeSegmentTime = currentSegment.segmentTime;
 	};
+
+	// const getActiveSegmentTime = (rightOne?: boolean) => {
+	// 	const currentSegment = runsData?.latestRunSegments.find(
+	// 		(runSegment) => runSegment.segmentId === currentSegmentId
+	// 	);
+	// 	if (rightOne) {
+	// 		console.log(isRunning, currentSegment, Date.now() - activeSegmentStartedAtTime);
+	// 	}
+	// 	// return
+	// 	// isRunning
+	// 	// ?
+	// 	return Date.now() - activeSegmentStartedAtTime + (currentSegment?.segmentTime ?? 0);
+	// 	// : currentSegment?.segmentTime ?? 0;
+	// };
 
 	const handleRunTypeChange = async (e: any) => {
 		runType = e.target.value;
 		await fetchSegments();
+		await fetchRuns();
 	};
 	const handleAddSegment = () => {
 		const maxId =
@@ -46,6 +87,23 @@
 	onMount(async () => {
 		await fetchRuns();
 	});
+
+	let interval: NodeJS.Timer | undefined;
+
+	const addTimerInterval = () => {
+		const originalRunningTime = runningTime;
+		const originalSegmentTime = activeSegmentTime;
+		interval = setInterval(() => {
+			runningTime = Date.now() - activeSegmentStartedAtTime + originalRunningTime;
+			activeSegmentTime = Date.now() - activeSegmentStartedAtTime + originalSegmentTime;
+		}, 10);
+	};
+
+	const removeTimerInterval = () => {
+		if (interval) {
+			clearInterval(interval);
+		}
+	};
 </script>
 
 <div class="container">
@@ -77,13 +135,13 @@
 				{:else}
 					{#each segments as segment}
 						<SegmentItem
-							{activeSegmentTime}
-							{activeSegmentStartedAtTime}
-							{currentSegmentId}
-							bestSegmentTimes={runsData?.bestSegmentTimes}
-							{segment}
-							{runId}
-							latestRunSegments={runsData?.latestRunSegments}
+							bind:activeSegmentStartedAtTime
+							bind:currentSegmentId
+							bind:segment
+							bind:runId
+							bind:latestRunSegments
+							bind:bestSegmentTimes
+							bind:activeSegmentTime
 						/>
 					{/each}
 				{/if}
@@ -100,8 +158,21 @@
 			{/await}
 		</div>
 		<div class="stopwatch">
-			<!-- <Stopwatch />
-			<Stats /> -->
+			<Stopwatch
+				bind:isRunning
+				bind:runningTime
+				bind:activeSegmentStartedAtTime
+				bind:runType
+				bind:currentSegmentId
+				bind:runId
+				bind:runsData
+				bind:activeSegmentTime
+				{isFinished}
+				{isOnLastSegment}
+				{addTimerInterval}
+				{removeTimerInterval}
+			/>
+			<!-- <Stats /> -->
 		</div>
 	</div>
 </div>
