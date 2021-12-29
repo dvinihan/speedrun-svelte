@@ -1,12 +1,14 @@
-<script>
+<script lang="ts">
 	import axios from 'axios';
+	import type { RunType } from 'src/constants';
+	import type { SegmentRow } from 'src/types';
 
-	export let fetchSegments;
+	export let fetchSegments: () => Promise<void>;
 	export let isNew = false;
-	export let segment;
-	export let runType;
+	export let segment: SegmentRow;
+	export let runType: RunType;
 	export let showEdit = false;
-	export let handleDiscard = undefined;
+	export let handleDiscard: () => void | undefined = undefined;
 
 	const performSave = async () => {
 		await axios.post(`/saveSegment?runType=${runType}`, {

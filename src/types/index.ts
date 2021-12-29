@@ -14,3 +14,11 @@ export type RunSegment = {
 	segmentTime: number;
 	isCompleted: boolean;
 };
+
+export type RunsApiResponse = {
+	bestPossibleTime: number;
+	bestSegmentTimes: RunSegmentTime[];
+	bestOverallTime: number;
+	latestRunSegments: RunSegment[];
+	overUnders: RunSegmentTime[];
+};

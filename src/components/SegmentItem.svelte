@@ -6,14 +6,16 @@
 
 	export let segment: SegmentRow;
 	export let currentSegmentId: number;
-	export let bestSegmentTimes: RunSegmentTime[];
-	export let runSegments: RunSegment[];
+	export let bestSegmentTimes: RunSegmentTime[] = [];
+	export let latestRunSegments: RunSegment[] = [];
 	export let activeSegmentStartedAtTime: number;
 	export let activeSegmentTime: number;
 	export let runId: number;
 
-	let bestSegmentTime = bestSegmentTimes.find((s) => s.segmentId === segment.id)?.time;
-	let runSegment = runSegments.find((r) => r.segmentId === currentSegmentId && r.runId === runId);
+	$: bestSegmentTime = bestSegmentTimes.find((s) => s.segmentId === segment.id)?.time;
+	$: runSegment = latestRunSegments.find(
+		(r) => r.segmentId === currentSegmentId && r.runId === runId
+	);
 
 	$: isActive = currentSegmentId === segment.id;
 	$: shouldCollapse = !runSegment?.isCompleted && !isActive;

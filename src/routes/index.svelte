@@ -1,13 +1,12 @@
 <script lang="ts">
-	import type { RunSegment, RunSegmentTime, SegmentRow } from 'src/types';
+	import type { RunsApiResponse, SegmentRow } from 'src/types';
 	import { RunType } from '../constants';
 	import { onMount } from 'svelte';
 	import SegmentItem from '../components/SegmentItem.svelte';
 	import EditSegmentItem from '../components/EditSegmentItem.svelte';
 
+	let runsData: RunsApiResponse;
 	let segments: SegmentRow[] = [];
-	let runSegments: RunSegment[] = [];
-	let bestSegmentTimes: RunSegmentTime[] = [];
 
 	let isRunning: boolean = false;
 	let activeSegmentStartedAtTime: number;
@@ -16,13 +15,19 @@
 	let runType: RunType = RunType.ANY_PERCENT;
 
 	let editSegments = false;
-	let newSegment;
+	let newSegment: SegmentRow | undefined;
 	let currentSegmentId: number;
 
 	const fetchSegments = async () => {
 		const res = await fetch(`/segments?runType=${runType}`);
 		segments = await res.json();
 		newSegment = undefined;
+	};
+	const segmentsPromise = fetchSegments();
+
+	const fetchRuns = async () => {
+		const res = await fetch(`runs?runType=${runType}`);
+		runsData = await res.json();
 	};
 
 	const handleRunTypeChange = async (e: any) => {
@@ -39,7 +44,7 @@
 	};
 
 	onMount(async () => {
-		await fetchSegments();
+		await fetchRuns();
 	});
 </script>
 
@@ -52,43 +57,47 @@
 	<h3>Segments:</h3>
 	<div class="flex-wrap">
 		<div class="segments-list">
-			{#if editSegments}
-				{#each segments as segment}
-					<EditSegmentItem {fetchSegments} {segment} {runType} />
-				{/each}
-				{#if newSegment}
-					<EditSegmentItem
-						{handleDiscard}
-						{fetchSegments}
-						showEdit
-						isNew
-						segment={newSegment}
-						{runType}
-					/>
-				{/if}
-			{:else}
-				{#each segments as segment}
-					<SegmentItem
-						{activeSegmentTime}
-						{activeSegmentStartedAtTime}
-						{currentSegmentId}
-						{bestSegmentTimes}
-						{segment}
-						{runId}
-						{runSegments}
-					/>
-				{/each}
-			{/if}
-			<button class="medium-button" on:click={() => (editSegments = !editSegments)}>
+			{#await segmentsPromise}
+				<div>Loading...</div>
+			{:then}
 				{#if editSegments}
-					Done Editing
+					{#each segments as segment}
+						<EditSegmentItem {fetchSegments} {segment} {runType} />
+					{/each}
+					{#if newSegment}
+						<EditSegmentItem
+							{handleDiscard}
+							{fetchSegments}
+							showEdit
+							isNew
+							segment={newSegment}
+							{runType}
+						/>
+					{/if}
 				{:else}
-					Edit Route
+					{#each segments as segment}
+						<SegmentItem
+							{activeSegmentTime}
+							{activeSegmentStartedAtTime}
+							{currentSegmentId}
+							bestSegmentTimes={runsData?.bestSegmentTimes}
+							{segment}
+							{runId}
+							latestRunSegments={runsData?.latestRunSegments}
+						/>
+					{/each}
 				{/if}
-			</button>
-			{#if editSegments && !newSegment}
-				<button class="medium-button" on:click={handleAddSegment}>Add Segment</button>
-			{/if}
+				<button class="medium-button" on:click={() => (editSegments = !editSegments)}>
+					{#if editSegments}
+						Done Editing
+					{:else}
+						Edit Route
+					{/if}
+				</button>
+				{#if editSegments && !newSegment}
+					<button class="medium-button" on:click={handleAddSegment}>Add Segment</button>
+				{/if}
+			{/await}
 		</div>
 		<div class="stopwatch">
 			<!-- <Stopwatch />

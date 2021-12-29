@@ -5,7 +5,7 @@ import type { SegmentRow } from 'src/types';
 import connectToDatabase from '../util/mongodb';
 import { getCollectionName } from '../util/server';
 
-export type SegmentsResponse = {
+type SegmentsResponse = {
 	body: SegmentRow[];
 };
 
