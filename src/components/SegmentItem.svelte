@@ -24,7 +24,7 @@
 <div class={`segment ${isActive ? 'active' : ''} ${shouldCollapse ? 'collapsed' : ''}`}>
 	<div class="name">{segment.name}</div>
 	<div class="flex-center">
-		{#if { bestSegmentTime } && { isActive }}
+		{#if bestSegmentTime && isActive}
 			<div class="best-time">
 				<div class="small-text">Best</div>
 				<div>{getDisplayTime(bestSegmentTime)}</div>

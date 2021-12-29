@@ -56,20 +56,6 @@
 		activeSegmentTime = currentSegment.segmentTime;
 	};
 
-	// const getActiveSegmentTime = (rightOne?: boolean) => {
-	// 	const currentSegment = runsData?.latestRunSegments.find(
-	// 		(runSegment) => runSegment.segmentId === currentSegmentId
-	// 	);
-	// 	if (rightOne) {
-	// 		console.log(isRunning, currentSegment, Date.now() - activeSegmentStartedAtTime);
-	// 	}
-	// 	// return
-	// 	// isRunning
-	// 	// ?
-	// 	return Date.now() - activeSegmentStartedAtTime + (currentSegment?.segmentTime ?? 0);
-	// 	// : currentSegment?.segmentTime ?? 0;
-	// };
-
 	const handleRunTypeChange = async (e: any) => {
 		runType = e.target.value;
 		await fetchSegments();
@@ -113,11 +99,11 @@
 		<option selected value={RunType.ANY_PERCENT}>Any%</option>
 	</select>
 	<h3>Segments:</h3>
-	<div class="flex-wrap">
-		<div class="segments-list">
-			{#await segmentsPromise}
-				<div>Loading...</div>
-			{:then}
+	{#await segmentsPromise}
+		<div>Loading...</div>
+	{:then}
+		<div class="flex-wrap">
+			<div class="segments-list">
 				{#if editSegments}
 					{#each segments as segment}
 						<EditSegmentItem {fetchSegments} {segment} {runType} />
@@ -155,26 +141,26 @@
 				{#if editSegments && !newSegment}
 					<button class="medium-button" on:click={handleAddSegment}>Add Segment</button>
 				{/if}
-			{/await}
+			</div>
+			<div class="stopwatch">
+				<Stopwatch
+					bind:isRunning
+					bind:runningTime
+					bind:activeSegmentStartedAtTime
+					bind:runType
+					bind:currentSegmentId
+					bind:runId
+					bind:runsData
+					bind:activeSegmentTime
+					{isFinished}
+					{isOnLastSegment}
+					{addTimerInterval}
+					{removeTimerInterval}
+				/>
+				<!-- <Stats /> -->
+			</div>
 		</div>
-		<div class="stopwatch">
-			<Stopwatch
-				bind:isRunning
-				bind:runningTime
-				bind:activeSegmentStartedAtTime
-				bind:runType
-				bind:currentSegmentId
-				bind:runId
-				bind:runsData
-				bind:activeSegmentTime
-				{isFinished}
-				{isOnLastSegment}
-				{addTimerInterval}
-				{removeTimerInterval}
-			/>
-			<!-- <Stats /> -->
-		</div>
-	</div>
+	{/await}
 </div>
 
 <style>
